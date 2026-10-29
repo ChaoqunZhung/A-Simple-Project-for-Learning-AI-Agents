@@ -21,7 +21,7 @@ def _integer(name: str, default: int, minimum: int, maximum: int) -> int:
 
 @dataclass(frozen=True)
 class Settings:
-    base_url: str = "https://allincode.top/v1"
+    base_url: str = "xxx"
     api_key: str = field(default="", repr=False)
     model: str = ""
     tavily_api_key: str = field(default="", repr=False)
@@ -44,7 +44,7 @@ class Settings:
     def from_env(cls) -> "Settings":
         load_dotenv(PROJECT_DIR / ".env", override=False)
         return cls(
-            base_url=os.getenv("OPENAI_BASE_URL", "https://allincode.top/v1").strip(),
+            base_url=os.getenv("OPENAI_BASE_URL", "xxx").strip(),
             api_key=os.getenv("OPENAI_API_KEY", "").strip(),
             model=os.getenv("OPENAI_MODEL", "").strip(),
             tavily_api_key=os.getenv("TAVILY_API_KEY", "").strip(),
