@@ -1,5 +1,11 @@
 # Research Agent
 
+[简体中文](./README.md) | [English](./README_EN.md)
+
+**中文：** 一个帮助新手理解 Agent 工作流程的 Python 科研助手。它通过工具调用检索本地论文、分析数据、搜索网页，并根据可追溯证据组织回答。
+
+**English:** A Python research assistant and beginner-friendly guide to agent workflows. It uses tool calling to search local papers, analyze data, browse the web, and produce evidence-grounded answers.
+
 一个 Python 3.11+ 科研助手：通过原生 OpenAI SDK 的 Chat Completions 工具调用接口，检索本地 PDF、执行科学计算、搜索互联网，并综合证据回答。无需 LangChain、embedding API 或手动构建向量数据库。
 
 ## 1. 安装（Windows PowerShell）
