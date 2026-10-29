@@ -1,6 +1,6 @@
 # Research Agent
 
-[简体中文](./README.md) | [English](./README_EN.md)
+[English](./README.md) | [简体中文](./README_EN.md)
 
 A Python 3.11+ research assistant built with the native OpenAI SDK Chat Completions tool-calling interface. It can search local PDFs, run scientific calculations, search the web, and synthesize evidence. No LangChain, embedding API, or manually maintained vector database is required.
 
