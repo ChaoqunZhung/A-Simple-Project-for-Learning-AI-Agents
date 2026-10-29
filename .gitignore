@@ -1,0 +1,15 @@
+.env
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.DS_Store
+logs/
+data/*
+!data/papers/
+!data/papers/.gitkeep
+!data/example.csv
+data/papers/*.pdf
+data/papers/*.PDF
+data/papers/**/*.pdf
+data/papers/**/*.PDF
