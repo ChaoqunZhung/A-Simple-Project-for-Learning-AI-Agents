@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Research Agent
 
 [简体中文](./README.md) | [English](./README_EN.md)
@@ -372,3 +373,7 @@ main.py
 - `skills/web-evidence/SKILL.md`：Tavily 检索、URL 保存、事实与分析分开。
 
 这些文件是项目文档和提示词资源，不会自动执行代码，也不包含任何 API key。新增 skill 时保持一个清晰职责，写明触发场景、工具顺序、证据要求和失败时的处理方式。
+=======
+# A-Simple-Project-for-Learning-AI-Agents
+A hands-on project for learning AI agents, covering tool calling, memory, planning, and agent workflows through simple, practical examples.
+>>>>>>> 97ba1c0f5dac177d862cfa3b72d15a5d763a73db
