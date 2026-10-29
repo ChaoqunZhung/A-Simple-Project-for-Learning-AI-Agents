@@ -1,0 +1,769 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0a0f1b">
+  <meta name="description" content="A bilingual research workspace powered by tools and evidence.">
+  <title>Research Agent · 研究工作台</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #edf2ff;
+      --muted: #929db5;
+      --faint: #67738c;
+      --line: rgba(179, 194, 225, .12);
+      --panel: rgba(17, 25, 43, .78);
+      --panel-strong: #111a2b;
+      --accent: #9c8cff;
+      --accent-bright: #bcafff;
+      --mint: #78e1c4;
+      --danger: #ff9a9a;
+      --radius: 22px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(ellipse at 68% -12%, rgba(114, 94, 210, .19), transparent 38rem),
+        radial-gradient(ellipse at 8% 42%, rgba(30, 132, 126, .09), transparent 28rem),
+        #0a0f1b;
+    }
+
+    button, textarea, select { font: inherit; }
+    button { color: inherit; }
+    a { color: inherit; text-decoration: none; }
+
+    .app-shell { width: min(1440px, 100%); margin: 0 auto; padding: 22px 30px 30px; }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 54px;
+      margin-bottom: 22px;
+    }
+
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-mark {
+      display: grid;
+      width: 42px;
+      height: 42px;
+      place-items: center;
+      color: #141327;
+      border-radius: 14px;
+      background: linear-gradient(145deg, #c0b5ff, #78e1c4);
+      box-shadow: 0 7px 28px rgba(131, 117, 230, .22);
+    }
+    .brand-mark svg { width: 23px; height: 23px; }
+    .brand-copy { display: grid; gap: 2px; }
+    .brand-name { font-size: 15px; font-weight: 720; letter-spacing: -.025em; }
+    .brand-caption { color: var(--muted); font-size: 11px; letter-spacing: .04em; }
+
+    .top-actions { display: flex; align-items: center; gap: 10px; }
+    .api-status, .language-button, .docs-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(18, 27, 45, .72);
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .api-status { gap: 8px; padding: 0 12px; }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #e8b86c; }
+    .api-status[data-state="ready"] .status-dot { background: var(--mint); box-shadow: 0 0 10px #78e1c488; }
+    .api-status[data-state="offline"] .status-dot,
+    .api-status[data-state="missing"] .status-dot { background: #f0a27a; }
+    .language-button, .docs-link {
+      padding: 0 13px;
+      transition: border-color .2s, color .2s, background .2s;
+    }
+    .language-button { cursor: pointer; color: var(--ink); font-weight: 650; }
+    .language-button:hover, .docs-link:hover { border-color: #9c8cff77; color: var(--accent-bright); }
+
+    .workspace { display: grid; grid-template-columns: 248px minmax(0, 1fr); gap: 18px; align-items: stretch; }
+    .sidebar, .main-panel {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: 0 18px 70px rgba(0, 0, 0, .18);
+      backdrop-filter: blur(18px);
+    }
+
+    .sidebar { display: flex; flex-direction: column; min-height: 760px; padding: 17px 14px; }
+    .new-chat {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      min-height: 44px;
+      border: 1px solid rgba(188, 175, 255, .36);
+      border-radius: 13px;
+      background: linear-gradient(120deg, rgba(156, 140, 255, .18), rgba(120, 225, 196, .08));
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 650;
+      transition: transform .18s, border-color .18s, background .18s;
+    }
+    .new-chat:hover { transform: translateY(-1px); border-color: var(--accent); background: rgba(156, 140, 255, .2); }
+    .plus { color: var(--accent-bright); font-size: 20px; font-weight: 400; line-height: 1; }
+    .section-label {
+      margin: 27px 8px 13px;
+      color: var(--faint);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+    }
+
+    .flow-list { display: grid; gap: 6px; }
+    .flow-step {
+      display: grid;
+      grid-template-columns: 30px 1fr;
+      align-items: center;
+      gap: 10px;
+      min-height: 57px;
+      padding: 7px 9px;
+      border: 1px solid transparent;
+      border-radius: 13px;
+    }
+    .flow-step.active { border-color: rgba(156, 140, 255, .17); background: rgba(156, 140, 255, .075); }
+    .step-number {
+      display: grid;
+      width: 28px;
+      height: 28px;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+    .flow-step.active .step-number { color: var(--accent-bright); border-color: rgba(188, 175, 255, .32); }
+    .step-title { font-size: 12px; font-weight: 620; }
+    .step-note { margin-top: 3px; color: var(--faint); font-size: 10px; }
+    .tool-list { display: grid; gap: 9px; }
+    .tool-row { display: flex; align-items: center; gap: 10px; padding: 5px 8px; color: #b7c1d5; font-size: 11px; }
+    .tool-icon {
+      display: grid;
+      width: 27px;
+      height: 27px;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      color: var(--mint);
+      background: rgba(120, 225, 196, .055);
+      font-size: 11px;
+    }
+    .sidebar-tip {
+      margin-top: auto;
+      padding: 14px;
+      border: 1px solid rgba(120, 225, 196, .13);
+      border-radius: 15px;
+      background: linear-gradient(145deg, rgba(120, 225, 196, .08), rgba(156, 140, 255, .04));
+    }
+    .tip-kicker { color: var(--mint); font-size: 10px; font-weight: 700; letter-spacing: .1em; }
+    .tip-copy { margin: 8px 0 0; color: #b0bbcf; font-size: 11px; line-height: 1.65; }
+
+    .main-panel { min-width: 0; min-height: 760px; padding: 0 28px 20px; }
+    .panel-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 62px;
+      border-bottom: 1px solid var(--line);
+    }
+    .panel-context { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: 11px; }
+    .context-mark { color: var(--accent-bright); font-size: 15px; }
+    .session-pill {
+      max-width: 220px;
+      overflow: hidden;
+      padding: 6px 9px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      color: var(--faint);
+      font: 10px ui-monospace, SFMono-Regular, Menlo, monospace;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .hero { max-width: 760px; margin: 54px auto 28px; text-align: center; }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 10px;
+      border: 1px solid rgba(156, 140, 255, .2);
+      border-radius: 99px;
+      color: #c4b8ff;
+      background: rgba(156, 140, 255, .07);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .14em;
+    }
+    .eyebrow-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--mint); }
+    h1 { margin: 18px 0 12px; font-size: clamp(29px, 4vw, 43px); font-weight: 680; letter-spacing: -.055em; line-height: 1.2; }
+    .headline-accent {
+      color: transparent;
+      background: linear-gradient(100deg, #c2b8ff 12%, #84e4cf 92%);
+      background-clip: text;
+      -webkit-background-clip: text;
+    }
+    .hero-copy { max-width: 570px; margin: 0 auto; color: var(--muted); font-size: 13px; line-height: 1.8; }
+    .suggestions { max-width: 830px; margin: 0 auto 22px; }
+    .suggestion-heading { margin: 0 0 10px 2px; color: var(--faint); font-size: 10px; font-weight: 700; letter-spacing: .12em; }
+    .suggestion-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+    .suggestion {
+      min-height: 75px;
+      padding: 12px 13px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(21, 31, 51, .65);
+      color: #c8d0df;
+      cursor: pointer;
+      text-align: left;
+      transition: transform .18s, border-color .18s, background .18s;
+    }
+    .suggestion:hover { transform: translateY(-2px); border-color: rgba(156, 140, 255, .45); background: rgba(31, 39, 65, .8); }
+    .suggestion-title { display: block; margin-bottom: 6px; color: var(--ink); font-size: 11px; font-weight: 650; }
+    .suggestion-text { display: block; color: var(--muted); font-size: 10px; line-height: 1.5; }
+
+    .conversation {
+      display: grid;
+      align-content: start;
+      gap: 16px;
+      width: min(830px, 100%);
+      max-height: 37vh;
+      min-height: 8px;
+      overflow-y: auto;
+      margin: 0 auto;
+      padding: 4px 3px 20px;
+      scrollbar-color: #39445b transparent;
+      scrollbar-width: thin;
+    }
+    .message { display: flex; gap: 10px; animation: appear .24s ease-out; }
+    @keyframes appear { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    .message.user { flex-direction: row-reverse; }
+    .avatar {
+      display: grid;
+      flex: 0 0 30px;
+      width: 30px;
+      height: 30px;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      color: var(--accent-bright);
+      background: rgba(156, 140, 255, .1);
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .message.user .avatar { color: #b5f2e3; background: rgba(120, 225, 196, .1); }
+    .message-content { max-width: min(78%, 680px); }
+    .message-role { margin: 2px 0 6px; color: var(--faint); font-size: 10px; }
+    .message.user .message-role { text-align: right; }
+    .message-bubble {
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 4px 15px 15px;
+      background: rgba(24, 34, 54, .85);
+      color: #dce3f0;
+      font-size: 12px;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+    }
+    .message.user .message-bubble {
+      border-color: rgba(120, 225, 196, .13);
+      border-radius: 15px 4px 15px 15px;
+      background: rgba(36, 75, 75, .32);
+    }
+    .message.error .message-bubble { border-color: rgba(255, 154, 154, .22); color: #ffc2b9; }
+    .typing-dots { display: inline-flex; gap: 4px; padding: 5px 2px; }
+    .typing-dots span { width: 5px; height: 5px; border-radius: 50%; background: #a89cff; animation: pulse 1s infinite ease-in-out; }
+    .typing-dots span:nth-child(2) { animation-delay: .15s; }
+    .typing-dots span:nth-child(3) { animation-delay: .3s; }
+    @keyframes pulse { 0%, 60%, 100% { opacity: .35; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-3px); } }
+
+    .composer-wrap { position: sticky; bottom: 0; width: min(830px, 100%); margin: 0 auto; padding-top: 10px; background: linear-gradient(180deg, transparent, #111a2bf5 12%); }
+    .composer {
+      padding: 12px 13px 10px;
+      border: 1px solid rgba(174, 166, 255, .24);
+      border-radius: 17px;
+      background: rgba(12, 19, 33, .96);
+      box-shadow: 0 12px 35px rgba(0, 0, 0, .22), 0 0 0 3px rgba(156, 140, 255, .035);
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .composer:focus-within { border-color: rgba(174, 166, 255, .52); box-shadow: 0 12px 35px rgba(0, 0, 0, .22), 0 0 0 3px rgba(156, 140, 255, .08); }
+    #message-input {
+      display: block;
+      width: 100%;
+      min-height: 54px;
+      max-height: 160px;
+      resize: vertical;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: var(--ink);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+    #message-input::placeholder { color: #707c95; }
+    .composer-bottom { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 9px; border-top: 1px solid rgba(179, 194, 225, .08); }
+    .controls { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; color: var(--muted); font-size: 10px; }
+    .control-group { display: inline-flex; align-items: center; gap: 6px; }
+    .control-divider { width: 1px; height: 17px; background: var(--line); }
+    select {
+      max-width: 140px;
+      padding: 5px 23px 5px 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      outline: 0;
+      color: #d3d9e8;
+      background: #131d30;
+      font-size: 10px;
+    }
+    .mcp-toggle { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+    .mcp-toggle input { width: 13px; height: 13px; margin: 0; accent-color: #9c8cff; }
+    .send-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      min-width: 90px;
+      min-height: 34px;
+      padding: 0 12px;
+      border: 0;
+      border-radius: 10px;
+      background: linear-gradient(110deg, #a999ff, #78dfc3);
+      color: #111528;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 760;
+      transition: filter .2s, transform .2s, opacity .2s;
+    }
+    .send-button:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.07); }
+    .send-button:disabled { cursor: wait; opacity: .6; }
+    .send-button svg { width: 13px; height: 13px; }
+    .keyboard-hint { margin: 9px 0 0; color: #66728a; font-size: 9px; text-align: center; }
+    .footer-note { margin: 13px 0 0; color: #657189; font-size: 9px; text-align: center; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; clip-path: inset(50%); }
+
+    @media (max-width: 900px) {
+      .app-shell { padding: 16px; }
+      .workspace { grid-template-columns: 205px minmax(0, 1fr); gap: 12px; }
+      .sidebar { padding: 13px 10px; }
+      .main-panel { padding-right: 19px; padding-left: 19px; }
+      .suggestion-grid { grid-template-columns: 1fr; }
+      .suggestion { min-height: 60px; }
+      .hero { margin-top: 37px; }
+    }
+    @media (max-width: 640px) {
+      .app-shell { padding: 12px; }
+      .topbar { margin-bottom: 12px; }
+      .brand-caption, .api-status { display: none; }
+      .workspace { display: block; }
+      .sidebar { display: none; }
+      .main-panel { min-height: calc(100dvh - 82px); padding: 0 15px 16px; }
+      .panel-top { min-height: 52px; }
+      .hero { margin: 36px auto 22px; }
+      h1 { font-size: 31px; }
+      .hero-copy { font-size: 12px; }
+      .suggestion-grid { grid-template-columns: 1fr; }
+      .suggestion { min-height: 54px; }
+      .conversation { max-height: 32vh; }
+      .message-content { max-width: 86%; }
+      .composer-bottom { align-items: flex-end; }
+      .controls { gap: 7px; }
+      .control-divider { display: none; }
+      select { max-width: 118px; }
+      .send-button { min-width: 38px; width: 38px; padding: 0; }
+      .send-label { display: none; }
+      .keyboard-hint { display: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="/ui" aria-label="Research Agent home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M12 3.2 14.2 9.8 20.8 12l-6.6 2.2L12 20.8l-2.2-6.6L3.2 12l6.6-2.2L12 3.2Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+            <circle cx="12" cy="12" r="2" fill="currentColor"/>
+          </svg>
+        </span>
+        <span class="brand-copy">
+          <span class="brand-name">Research Agent</span>
+          <span class="brand-caption" data-i18n="brandCaption">让研究，从好问题开始</span>
+        </span>
+      </a>
+      <div class="top-actions">
+        <div class="api-status" id="api-status" data-state="loading" role="status" aria-live="polite">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span id="status-label" data-i18n="connecting">正在连接</span>
+        </div>
+        <a class="docs-link" href="/docs" data-i18n="apiDocs">API 文档</a>
+        <button class="language-button" id="language-button" type="button" aria-label="Switch language">EN</button>
+      </div>
+    </header>
+
+    <div class="workspace">
+      <aside class="sidebar" aria-label="Research workflow">
+        <button class="new-chat" id="new-chat" type="button">
+          <span class="plus" aria-hidden="true">+</span><span data-i18n="newChat">开启新对话</span>
+        </button>
+        <div class="section-label" data-i18n="workflow">研究流程</div>
+        <div class="flow-list">
+          <div class="flow-step active">
+            <span class="step-number">01</span>
+            <span><span class="step-title" data-i18n="stepAsk">提出问题</span><span class="step-note" data-i18n="stepAskNote">定义目标与范围</span></span>
+          </div>
+          <div class="flow-step">
+            <span class="step-number">02</span>
+            <span><span class="step-title" data-i18n="stepExplore">检索与分析</span><span class="step-note" data-i18n="stepExploreNote">调用工具找证据</span></span>
+          </div>
+          <div class="flow-step">
+            <span class="step-number">03</span>
+            <span><span class="step-title" data-i18n="stepSynthesize">综合结论</span><span class="step-note" data-i18n="stepSynthesizeNote">解释依据和局限</span></span>
+          </div>
+        </div>
+        <div class="section-label" data-i18n="toolbox">可用工具</div>
+        <div class="tool-list">
+          <div class="tool-row"><span class="tool-icon">⌕</span><span data-i18n="toolPapers">本地论文检索</span></div>
+          <div class="tool-row"><span class="tool-icon">∑</span><span data-i18n="toolData">数据与科学计算</span></div>
+          <div class="tool-row"><span class="tool-icon">↗</span><span data-i18n="toolWeb">网页证据检索</span></div>
+          <div class="tool-row"><span class="tool-icon">⋈</span><span data-i18n="toolMcp">MCP 工具接入</span></div>
+        </div>
+        <div class="sidebar-tip">
+          <div class="tip-kicker" data-i18n="researchTip">GOOD RESEARCH</div>
+          <p class="tip-copy" data-i18n="tipCopy">让每个结论都能回到证据。工具未成功时，Agent 会如实说明，而不是猜测。</p>
+        </div>
+      </aside>
+
+      <main class="main-panel">
+        <div class="panel-top">
+          <div class="panel-context"><span class="context-mark">✳</span><span data-i18n="workspaceLabel">研究工作台</span></div>
+          <div class="session-pill" id="session-label" aria-label="Session ID"></div>
+        </div>
+
+        <section class="hero" id="hero">
+          <div class="eyebrow"><span class="eyebrow-dot"></span><span data-i18n="eyebrow">EVIDENCE-LED RESEARCH</span></div>
+          <h1><span data-i18n="headlineA">从一个问题，</span><span class="headline-accent" data-i18n="headlineB">走到可信证据</span></h1>
+          <p class="hero-copy" data-i18n="heroCopy">连接本地论文、科学计算与网页检索。提出你的研究问题，让 Agent 帮你一步步找到依据、整理思路，并说明结论的边界。</p>
+        </section>
+
+        <section class="suggestions" id="suggestions" aria-label="Suggested questions">
+          <p class="suggestion-heading" data-i18n="tryAsking">从这里开始 · TRY ASKING</p>
+          <div class="suggestion-grid">
+            <button class="suggestion" type="button" data-prompt="paper">
+              <span class="suggestion-title" data-i18n="paperTitle">⌕　探索本地论文</span>
+              <span class="suggestion-text" data-i18n="paperPrompt">总结研究方法，并附上原文页码</span>
+            </button>
+            <button class="suggestion" type="button" data-prompt="data">
+              <span class="suggestion-title" data-i18n="dataTitle">∑　分析一份数据</span>
+              <span class="suggestion-text" data-i18n="dataPrompt">计算 example.csv 中 x 的均值与标准差</span>
+            </button>
+            <button class="suggestion" type="button" data-prompt="web">
+              <span class="suggestion-title" data-i18n="webTitle">↗　追踪最新进展</span>
+              <span class="suggestion-text" data-i18n="webPrompt">搜索近期研究，列出来源与日期</span>
+            </button>
+          </div>
+        </section>
+
+        <section class="conversation" id="conversation" aria-label="Conversation" aria-live="polite"></section>
+
+        <div class="composer-wrap">
+          <form class="composer" id="chat-form">
+            <label class="sr-only" for="message-input" data-i18n="inputLabel">输入你的研究问题</label>
+            <textarea id="message-input" rows="2" maxlength="16000" data-i18n-placeholder="placeholder"
+              placeholder="描述你想研究的问题，或粘贴一段数据任务…"></textarea>
+            <div class="composer-bottom">
+              <div class="controls">
+                <label class="control-group" for="mode-select">
+                  <span data-i18n="modeLabel">模式</span>
+                  <select id="mode-select" aria-label="Agent mode">
+                    <option value="single" data-i18n="singleMode">单 Agent</option>
+                    <option value="multi" data-i18n="multiMode">多 Agent</option>
+                  </select>
+                </label>
+                <span class="control-divider" aria-hidden="true"></span>
+                <label class="mcp-toggle" for="mcp-toggle">
+                  <input id="mcp-toggle" type="checkbox" checked>
+                  <span data-i18n="mcpLabel">允许 MCP</span>
+                </label>
+              </div>
+              <button class="send-button" id="send-button" type="submit">
+                <span class="send-label" data-i18n="send">发送</span>
+                <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <path d="M3.3 10h12.9m-5.1-5.1 5.1 5.1-5.1 5.1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+            </div>
+          </form>
+          <p class="keyboard-hint" data-i18n="keyboardHint">Enter 发送 · Shift + Enter 换行</p>
+          <p class="footer-note" data-i18n="footerNote">AI 生成内容需要核实。请检查引用来源，并避免提交敏感或机密数据。</p>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const translations = {
+      zh: {
+        brandCaption: "让研究，从好问题开始", connecting: "正在连接", apiDocs: "API 文档",
+        newChat: "开启新对话", workflow: "研究流程", stepAsk: "提出问题",
+        stepAskNote: "定义目标与范围", stepExplore: "检索与分析",
+        stepExploreNote: "调用工具找证据", stepSynthesize: "综合结论",
+        stepSynthesizeNote: "解释依据和局限", toolbox: "可用工具",
+        toolPapers: "本地论文检索", toolData: "数据与科学计算",
+        toolWeb: "网页证据检索", toolMcp: "MCP 工具接入",
+        researchTip: "GOOD RESEARCH",
+        tipCopy: "让每个结论都能回到证据。工具未成功时，Agent 会如实说明，而不是猜测。",
+        workspaceLabel: "研究工作台", eyebrow: "EVIDENCE-LED RESEARCH",
+        headlineA: "从一个问题，", headlineB: "走到可信证据",
+        heroCopy: "连接本地论文、科学计算与网页检索。提出你的研究问题，让 Agent 帮你一步步找到依据、整理思路，并说明结论的边界。",
+        tryAsking: "从这里开始 · TRY ASKING", paperTitle: "⌕　探索本地论文",
+        paperPrompt: "总结研究方法，并附上原文页码", dataTitle: "∑　分析一份数据",
+        dataPrompt: "计算 example.csv 中 x 的均值与标准差", webTitle: "↗　追踪最新进展",
+        webPrompt: "搜索近期研究，列出来源与日期", inputLabel: "输入你的研究问题",
+        placeholder: "描述你想研究的问题，或粘贴一段数据任务…", modeLabel: "模式",
+        singleMode: "单 Agent", multiMode: "多 Agent", mcpLabel: "允许 MCP",
+        send: "发送", keyboardHint: "Enter 发送 · Shift + Enter 换行",
+        footerNote: "AI 生成内容需要核实。请检查引用来源，并避免提交敏感或机密数据。",
+        ready: "模型已就绪", missing: "未配置模型", offline: "服务暂不可用",
+        userRole: "你", assistantRole: "Research Agent", thinking: "正在检索与分析…",
+        errorPrefix: "请求未完成", unexpected: "请求失败，请稍后重试。",
+        networkError: "无法连接到服务，请确认 API 正在运行。",
+        newSession: "已开启新对话。你可以从一个研究问题开始。",
+        emptyMessage: "请先输入一个问题。"
+      },
+      en: {
+        brandCaption: "Better questions, deeper research", connecting: "Connecting", apiDocs: "API docs",
+        newChat: "New conversation", workflow: "RESEARCH FLOW", stepAsk: "Ask a question",
+        stepAskNote: "Set a clear scope", stepExplore: "Explore & analyze",
+        stepExploreNote: "Gather evidence with tools", stepSynthesize: "Synthesize findings",
+        stepSynthesizeNote: "Explain evidence and limits", toolbox: "AVAILABLE TOOLS",
+        toolPapers: "Local paper search", toolData: "Data & scientific computing",
+        toolWeb: "Web evidence search", toolMcp: "MCP integrations",
+        researchTip: "GOOD RESEARCH",
+        tipCopy: "Every conclusion should lead back to evidence. If a tool fails, the agent says so instead of guessing.",
+        workspaceLabel: "Research workspace", eyebrow: "EVIDENCE-LED RESEARCH",
+        headlineA: "Turn a question", headlineB: " into trusted evidence",
+        heroCopy: "Connect local papers, scientific computing, and web search. Ask a research question and let your agent find evidence, organize ideas, and explain what the findings can—and cannot—tell you.",
+        tryAsking: "START HERE · TRY ASKING", paperTitle: "⌕　Explore local papers",
+        paperPrompt: "Summarize a method with page references", dataTitle: "∑　Analyze a dataset",
+        dataPrompt: "Find the mean and standard deviation of x in example.csv", webTitle: "↗　Track recent work",
+        webPrompt: "Search recent research and list sources and dates", inputLabel: "Enter your research question",
+        placeholder: "Describe your research question or a data task…", modeLabel: "Mode",
+        singleMode: "Single agent", multiMode: "Multi-agent", mcpLabel: "Allow MCP",
+        send: "Send", keyboardHint: "Enter to send · Shift + Enter for a new line",
+        footerNote: "AI-generated content needs verification. Check sources and avoid sharing sensitive data.",
+        ready: "Model ready", missing: "Model not configured", offline: "Service unavailable",
+        userRole: "You", assistantRole: "Research Agent", thinking: "Searching and analyzing…",
+        errorPrefix: "Request incomplete", unexpected: "The request failed. Please try again.",
+        networkError: "Could not reach the service. Make sure the API is running.",
+        newSession: "A new conversation is ready. Start with a research question.",
+        emptyMessage: "Enter a question first."
+      }
+    };
+
+    const prompts = {
+      paper: {
+        zh: "请检索本地论文，概括研究方法，并给出文件名和页码。",
+        en: "Search the local papers, summarize the research methods, and include source filenames and page numbers."
+      },
+      data: {
+        zh: "读取 example.csv，计算 x 的均值和样本标准差，并说明样本量的限制。",
+        en: "Read example.csv, calculate the mean and sample standard deviation of x, and explain the sample-size limitations."
+      },
+      web: {
+        zh: "搜索近期关于大语言模型科研应用的研究进展，给出来源链接，并区分事实与分析。",
+        en: "Search for recent research on LLM applications in science. Include source links and distinguish facts from analysis."
+      }
+    };
+
+    const languageButton = document.querySelector("#language-button");
+    const statusBox = document.querySelector("#api-status");
+    const statusLabel = document.querySelector("#status-label");
+    const form = document.querySelector("#chat-form");
+    const input = document.querySelector("#message-input");
+    const sendButton = document.querySelector("#send-button");
+    const conversation = document.querySelector("#conversation");
+    const suggestions = document.querySelector("#suggestions");
+    const sessionLabel = document.querySelector("#session-label");
+    let language = localStorage.getItem("researchAgentLanguage") || "zh";
+    let statusState = "loading";
+    let sessionId = localStorage.getItem("researchAgentSession");
+
+    function makeSessionId() {
+      return `research-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    }
+
+    function setSessionId(value) {
+      sessionId = value;
+      localStorage.setItem("researchAgentSession", value);
+      sessionLabel.textContent = `SESSION · ${value}`;
+    }
+
+    function setStatus(state) {
+      statusState = state;
+      statusBox.dataset.state = state;
+      const key = { loading: "connecting", ready: "ready", missing: "missing", offline: "offline" }[state];
+      statusLabel.textContent = translations[language][key];
+    }
+
+    function setLanguage(next) {
+      language = next;
+      localStorage.setItem("researchAgentLanguage", language);
+      document.documentElement.lang = language === "zh" ? "zh-CN" : "en";
+      document.title = language === "zh" ? "Research Agent · 研究工作台" : "Research Agent · Research Workspace";
+      document.querySelectorAll("[data-i18n]").forEach((element) => {
+        element.textContent = translations[language][element.dataset.i18n];
+      });
+      document.querySelectorAll("[data-i18n-placeholder]").forEach((element) => {
+        element.placeholder = translations[language][element.dataset.i18nPlaceholder];
+      });
+      document.querySelectorAll(".message-role").forEach((element) => {
+        element.textContent = element.closest(".message").dataset.role === "user"
+          ? translations[language].userRole : translations[language].assistantRole;
+      });
+      languageButton.textContent = language === "zh" ? "EN" : "中文";
+      languageButton.setAttribute("aria-label", language === "zh" ? "Switch to English" : "切换到中文");
+      setStatus(statusState);
+    }
+
+    function addMessage(role, text, isError = false, isTyping = false) {
+      const article = document.createElement("article");
+      article.className = `message ${role}${isError ? " error" : ""}`;
+      article.dataset.role = role;
+      const avatar = document.createElement("span");
+      avatar.className = "avatar";
+      avatar.setAttribute("aria-hidden", "true");
+      avatar.textContent = role === "user" ? (language === "zh" ? "我" : "Y") : "✳";
+      const content = document.createElement("div");
+      content.className = "message-content";
+      const label = document.createElement("div");
+      label.className = "message-role";
+      label.textContent = role === "user" ? translations[language].userRole : translations[language].assistantRole;
+      const bubble = document.createElement("div");
+      bubble.className = "message-bubble";
+      if (isTyping) {
+        bubble.setAttribute("aria-label", translations[language].thinking);
+        bubble.innerHTML = '<span class="typing-dots" aria-hidden="true"><span></span><span></span><span></span></span>';
+      } else {
+        bubble.textContent = text;
+      }
+      content.append(label, bubble);
+      article.append(avatar, content);
+      conversation.append(article);
+      conversation.scrollTop = conversation.scrollHeight;
+      return article;
+    }
+
+    async function checkStatus() {
+      try {
+        const response = await fetch("/");
+        if (!response.ok) throw new Error("status");
+        const info = await response.json();
+        setStatus(info.llm_configured ? "ready" : "missing");
+      } catch {
+        setStatus("offline");
+      }
+    }
+
+    document.querySelectorAll("[data-prompt]").forEach((button) => {
+      button.addEventListener("click", () => {
+        input.value = prompts[button.dataset.prompt][language];
+        input.focus();
+        input.dispatchEvent(new Event("input"));
+      });
+    });
+
+    languageButton.addEventListener("click", () => setLanguage(language === "zh" ? "en" : "zh"));
+
+    document.querySelector("#new-chat").addEventListener("click", () => {
+      setSessionId(makeSessionId());
+      conversation.replaceChildren();
+      suggestions.hidden = false;
+      document.querySelector("#hero").hidden = false;
+      input.value = "";
+      addMessage("assistant", translations[language].newSession);
+      input.focus();
+    });
+
+    input.addEventListener("input", () => {
+      input.style.height = "auto";
+      input.style.height = `${Math.min(input.scrollHeight, 160)}px`;
+    });
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        form.requestSubmit();
+      }
+    });
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const message = input.value.trim();
+      if (!message) {
+        input.focus();
+        return;
+      }
+      addMessage("user", message);
+      input.value = "";
+      input.style.height = "auto";
+      suggestions.hidden = true;
+      document.querySelector("#hero").hidden = true;
+      sendButton.disabled = true;
+      sendButton.setAttribute("aria-busy", "true");
+      const typing = addMessage("assistant", "", false, true);
+      try {
+        const response = await fetch("/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message,
+            session_id: sessionId,
+            mode: document.querySelector("#mode-select").value,
+            agent_id: "research",
+            use_mcp: document.querySelector("#mcp-toggle").checked
+          })
+        });
+        const result = await response.json().catch(() => ({}));
+        typing.remove();
+        if (!response.ok) {
+          const detail = typeof result.detail === "string" ? result.detail : translations[language].unexpected;
+          addMessage("assistant", `${translations[language].errorPrefix}: ${detail}`, true);
+        } else if (typeof result.answer === "string") {
+          addMessage("assistant", result.answer);
+        } else {
+          addMessage("assistant", translations[language].unexpected, true);
+        }
+      } catch {
+        typing.remove();
+        addMessage("assistant", translations[language].networkError, true);
+      } finally {
+        sendButton.disabled = false;
+        sendButton.removeAttribute("aria-busy");
+        input.focus();
+      }
+    });
+
+    if (!sessionId) setSessionId(makeSessionId());
+    else setSessionId(sessionId);
+    setLanguage(language);
+    checkStatus();
+  </script>
+</body>
+</html>

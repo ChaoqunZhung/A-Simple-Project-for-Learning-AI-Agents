@@ -10,10 +10,12 @@ from contextlib import asynccontextmanager
 import inspect
 import logging
 import os
+from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+from starlette.responses import FileResponse
 
 from agent import AgentError, ResearchAgent
 from config import Settings, configure_logging
@@ -166,6 +168,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Research Agent", version="1.1.0", lifespan=lifespan)
+UI_FILE = Path(__file__).parent / "static" / "index.html"
 
 
 class ChatRequest(BaseModel):
@@ -203,6 +206,11 @@ def status(request: Request) -> dict:
         "agents": [_agent_description(agent_id, runtime) for agent_id, runtime in agents.items()],
         "mcp": _mcp_status(request.app),
     }
+
+
+@app.get("/ui", response_class=FileResponse, include_in_schema=False)
+def research_ui() -> FileResponse:
+    return FileResponse(UI_FILE, media_type="text/html; charset=utf-8")
 
 
 @app.get("/agents")

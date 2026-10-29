@@ -294,6 +294,12 @@ class ApiTests(WorkspaceTest):
         with patch("api.server.Settings.from_env", return_value=self.settings):
             with TestClient(app) as client:
                 self.assertEqual(client.get("/health").json(), {"status": "ok"})
+                ui = client.get("/ui")
+                self.assertEqual(ui.status_code, 200)
+                self.assertIn("text/html", ui.headers["content-type"])
+                self.assertIn("Research Agent", ui.text)
+                self.assertIn("从一个问题", ui.text)
+                self.assertIn("Turn a question", ui.text)
                 self.assertFalse(client.get("/").json()["llm_configured"])
                 status = client.get("/").json()
                 self.assertGreaterEqual(status["agent_count"], 2)
